@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Node from "./Node/Node";
 import { bfs, getNodesInShortestPathOrder } from "../algorithms/bfs";
+import { aStar, getNodesInShortestPathOrderAStar } from "../algorithms/AStar";
 
 import "./PathfindingVisualizer.css";
 
@@ -14,18 +15,36 @@ export default class PathfindingVisualizer extends Component {
     super(props);
     this.state = {
       grid: [],
+      mouseIsPressed: false,
+      moving: false,
     };
   }
   componentDidMount() {
     const grid = getInitialGrid();
     this.setState({ grid });
   }
+  handleMouseDown(row, col) {
+    const newGrid = getNewGridWithWallToggled(this.state.grid, row, col);
+    this.setState({ grid: newGrid, mouseIsPressed: true });
+  }
+
+  handleMouseEnter(row, col) {
+    if (!this.state.mouseIsPressed) return;
+    const newGrid = getNewGridWithWallToggled(this.state.grid, row, col);
+    this.setState({ grid: newGrid });
+  }
+
+  handleMouseUp() {
+    this.setState({ mouseIsPressed: false });
+  }
   animateBFS(visitedNodesInOrder, nodesInShortestPathOrder) {
+    this.setState({ moving: true });
     for (let i = 0; i <= visitedNodesInOrder.length; i++) {
       if (i === visitedNodesInOrder.length) {
         setTimeout(() => {
           this.animateShortestPath(nodesInShortestPathOrder);
         }, 10 * i);
+        this.setState({ moving: false });
         return;
       }
       setTimeout(() => {
@@ -49,49 +68,72 @@ export default class PathfindingVisualizer extends Component {
     const startNode = grid[START_NODE_ROW][START_NODE_COL];
     const finishNode = grid[FINISH_NODE_ROW][FINISH_NODE_COL];
     const visitedNodesInOrder = bfs(grid, startNode, finishNode);
-    // console.log(grid);
-    const nodesInShortestPathOrder = getNodesInShortestPathOrder(finishNode);
-    // console.log(nodesInShortestPathOrder);
+    const nodesInShortestPathOrder = getNodesInShortestPathOrder(
+      visitedNodesInOrder[visitedNodesInOrder.length - 1]
+    );
+    this.animateBFS(visitedNodesInOrder, nodesInShortestPathOrder);
+  }
+  visualizeAStar() {
+    const { grid } = this.state;
+    const startNode = grid[START_NODE_ROW][START_NODE_COL];
+    const finishNode = grid[FINISH_NODE_ROW][FINISH_NODE_COL];
+    const visitedNodesInOrder = aStar(grid, startNode, finishNode);
+    const nodesInShortestPathOrder = getNodesInShortestPathOrderAStar(
+      visitedNodesInOrder[visitedNodesInOrder.length - 1]
+    );
     this.animateBFS(visitedNodesInOrder, nodesInShortestPathOrder);
   }
   reset() {
-    for (let i = 0; i < 20; i++) {
-      for (let j = 0; j < 50; j++) {
-        if (i === START_NODE_ROW && j === START_NODE_COL) {
-          document.getElementById(`node-${i}-${j}`).className =
-            "node node-start";
-        } else if (i === FINISH_NODE_ROW && j === FINISH_NODE_COL) {
-          document.getElementById(`node-${i}-${j}`).className =
-            "node node-finish";
-        } else {
-          document.getElementById(`node-${i}-${j}`).className = "node";
+    if (!this.state.moving) {
+      for (let i = 0; i < 20; i++) {
+        for (let j = 0; j < 50; j++) {
+          if (i === START_NODE_ROW && j === START_NODE_COL) {
+            document.getElementById(`node-${i}-${j}`).className =
+              "node node-start";
+          } else if (i === FINISH_NODE_ROW && j === FINISH_NODE_COL) {
+            document.getElementById(`node-${i}-${j}`).className =
+              "node node-finish";
+          } else {
+            document.getElementById(`node-${i}-${j}`).className = "node";
+          }
         }
       }
+      const grid = getInitialGrid();
+      this.setState({ grid: grid });
     }
-    const grid = getInitialGrid();
-    this.setState({ grid });
   }
 
   render() {
+    const { grid, mouseIsPressed } = this.state;
     return (
       <>
         <button onClick={() => this.visualizeBFS()}>
           Visualize BFS algorithm
         </button>
+        <button onClick={() => this.visualizeAStar()}>
+          Visualize A* algorithm
+        </button>
         <button onClick={() => this.reset()}>Reset</button>
         <div className="grid">
-          {this.state.grid.map((row, rowIdx) => {
+          {grid.map((row, rowIdx) => {
             return (
               <div key={rowIdx}>
                 {row.map((node, nodeIdx) => {
-                  const { isStart, isFinish } = node;
+                  const { isStart, isFinish, isWall, row, col } = node;
                   return (
                     <Node
                       key={nodeIdx}
                       isStart={isStart}
                       isFinish={isFinish}
-                      col={nodeIdx}
-                      row={rowIdx}
+                      col={col}
+                      row={row}
+                      isWall={isWall}
+                      mouseIsPressed={mouseIsPressed}
+                      onMouseDown={(row, col) => this.handleMouseDown(row, col)}
+                      onMouseEnter={(row, col) =>
+                        this.handleMouseEnter(row, col)
+                      }
+                      onMouseUp={() => this.handleMouseUp()}
                     ></Node>
                   );
                 })}
@@ -125,5 +167,17 @@ const createNode = (col, row) => {
     isVisited: false,
     isWall: false,
     previousNode: null,
+    estimateDistance: Infinity,
   };
+};
+
+const getNewGridWithWallToggled = (grid, row, col) => {
+  const newGrid = grid.slice();
+  const node = newGrid[row][col];
+  const newNode = {
+    ...node,
+    isWall: !node.isWall,
+  };
+  newGrid[row][col] = newNode;
+  return newGrid;
 };

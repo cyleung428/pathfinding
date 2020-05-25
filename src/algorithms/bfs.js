@@ -16,7 +16,8 @@ export function bfs(grid, startNode, finishNode) {
       col < 0 ||
       row >= height ||
       col >= length ||
-      grid[row][col].isVisited
+      grid[row][col].isVisited ||
+      grid[row][col].isWall
     ) {
       continue;
     }
@@ -42,12 +43,11 @@ export function bfs(grid, startNode, finishNode) {
       queue.push(grid[row][col + 1]);
     }
   }
-  console.log(visitedNodesInOrder);
   return visitedNodesInOrder;
 }
 
 export function getNodesInShortestPathOrder(finishNode) {
-  const nodesInShortestPathOrder = [];
+  let nodesInShortestPathOrder = [];
   let currentNode = finishNode;
   while (currentNode !== null) {
     nodesInShortestPathOrder.unshift(currentNode);
