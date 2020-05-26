@@ -17,20 +17,26 @@ export default class PathfindingVisualizer extends Component {
       grid: [],
       mouseIsPressed: false,
       moving: false,
+      movingStartPoint: false,
+      movingFinishPoint: false,
+      startRow: 10,
+      startCol: 15,
+      finishRow: 10,
+      finishCol: 35
     };
   }
   componentDidMount() {
-    const grid = getInitialGrid();
+    const grid = this.getInitialGrid();
     this.setState({ grid });
   }
   handleMouseDown(row, col) {
-    const newGrid = getNewGridWithWallToggled(this.state.grid, row, col);
+    const newGrid = this.getNewGridWithWallToggled(this.state.grid, row, col);
     this.setState({ grid: newGrid, mouseIsPressed: true });
   }
 
   handleMouseEnter(row, col) {
     if (!this.state.mouseIsPressed) return;
-    const newGrid = getNewGridWithWallToggled(this.state.grid, row, col);
+    const newGrid = this.getNewGridWithWallToggled(this.state.grid, row, col);
     this.setState({ grid: newGrid });
   }
 
@@ -38,13 +44,15 @@ export default class PathfindingVisualizer extends Component {
     this.setState({ mouseIsPressed: false });
   }
   animateBFS(visitedNodesInOrder, nodesInShortestPathOrder) {
-    this.setState({ moving: true });
+    this.setState(prevState => ({
+      moving: !prevState.moving
+    }));
     for (let i = 0; i <= visitedNodesInOrder.length; i++) {
       if (i === visitedNodesInOrder.length) {
         setTimeout(() => {
           this.animateShortestPath(nodesInShortestPathOrder);
         }, 10 * i);
-        this.setState({ moving: false });
+        
         return;
       }
       setTimeout(() => {
@@ -61,6 +69,13 @@ export default class PathfindingVisualizer extends Component {
         document.getElementById(`node-${node.row}-${node.col}`).className =
           "node node-shortest-path";
       }, 50 * i);
+      if(i===nodesInShortestPathOrder.length-1) {
+        setTimeout(() => {
+          this.setState(prevState => ({
+            moving: !prevState.moving
+          }));
+        }, 10 * i + 1500);
+      }
     }
   }
   visualizeBFS() {
@@ -98,10 +113,46 @@ export default class PathfindingVisualizer extends Component {
           }
         }
       }
-      const grid = getInitialGrid();
+      const grid = this.getInitialGrid();
       this.setState({ grid: grid });
     }
   }
+
+  getInitialGrid = () => {
+    const grid = [];
+    for (let row = 0; row < 20; row++) {
+      const currentRow = [];
+      for (let col = 0; col < 50; col++) {
+        currentRow.push(this.createNode(col, row));
+      }
+      grid.push(currentRow);
+    }
+    return grid;
+  };
+  createNode = (col, row) => {
+    return {
+      col,
+      row,
+      isStart: row === START_NODE_ROW && col === START_NODE_COL,
+      isFinish: row === FINISH_NODE_ROW && col === FINISH_NODE_COL,
+      distance: Infinity,
+      isVisited: false,
+      isWall: false,
+      previousNode: null,
+      estimateDistance: Infinity,
+    };
+  };
+  
+  getNewGridWithWallToggled = (grid, row, col) => {
+    const newGrid = grid.slice();
+    const node = newGrid[row][col];
+    const newNode = {
+      ...node,
+      isWall: !node.isWall,
+    };
+    newGrid[row][col] = newNode;
+    return newGrid;
+  };
 
   render() {
     const { grid, mouseIsPressed } = this.state;
@@ -146,38 +197,4 @@ export default class PathfindingVisualizer extends Component {
   }
 }
 
-const getInitialGrid = () => {
-  const grid = [];
-  for (let row = 0; row < 20; row++) {
-    const currentRow = [];
-    for (let col = 0; col < 50; col++) {
-      currentRow.push(createNode(col, row));
-    }
-    grid.push(currentRow);
-  }
-  return grid;
-};
-const createNode = (col, row) => {
-  return {
-    col,
-    row,
-    isStart: row === START_NODE_ROW && col === START_NODE_COL,
-    isFinish: row === FINISH_NODE_ROW && col === FINISH_NODE_COL,
-    distance: Infinity,
-    isVisited: false,
-    isWall: false,
-    previousNode: null,
-    estimateDistance: Infinity,
-  };
-};
 
-const getNewGridWithWallToggled = (grid, row, col) => {
-  const newGrid = grid.slice();
-  const node = newGrid[row][col];
-  const newNode = {
-    ...node,
-    isWall: !node.isWall,
-  };
-  newGrid[row][col] = newNode;
-  return newGrid;
-};
