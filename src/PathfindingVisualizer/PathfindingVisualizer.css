@@ -1,4 +1,7 @@
-.grid {}
+.grid {
+  margin-left: 10px;
+  margin-right: 10px;
+}
 
 .customRow {
   line-height: 0px;
