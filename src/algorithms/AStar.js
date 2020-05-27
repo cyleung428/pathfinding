@@ -7,7 +7,6 @@ export function aStar(grid, startNode, finishNode) {
   let length = grid[0].length;
   let visitedNodesInOrder = [];
   let openQueue = [];
-  let closeQueue = [];
   startNode.distance = 0;
   startNode.estimateDistance = manhattanDistance(startNode, finishNode);
   openQueue.push(startNode);

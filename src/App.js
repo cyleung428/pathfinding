@@ -1,5 +1,6 @@
 import React from "react";
 import PathfindingVisualizer from "./PathfindingVisualizer/PathfindingVisualizer";
+import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
 function App() {

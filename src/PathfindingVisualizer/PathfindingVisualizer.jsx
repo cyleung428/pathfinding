@@ -2,6 +2,8 @@ import React, { Component } from "react";
 import Node from "./Node/Node";
 import { bfs, getNodesInShortestPathOrder } from "../algorithms/bfs";
 import { aStar, getNodesInShortestPathOrderAStar } from "../algorithms/AStar";
+import NavBar from "../Nav/Nav";
+import MainText from "../MainText/MainText";
 
 import "./PathfindingVisualizer.css";
 
@@ -22,7 +24,8 @@ export default class PathfindingVisualizer extends Component {
       startRow: 10,
       startCol: 15,
       finishRow: 10,
-      finishCol: 35
+      finishCol: 35,
+      algorithm: "BFS",
     };
   }
   componentDidMount() {
@@ -44,15 +47,15 @@ export default class PathfindingVisualizer extends Component {
     this.setState({ mouseIsPressed: false });
   }
   animateBFS(visitedNodesInOrder, nodesInShortestPathOrder) {
-    this.setState(prevState => ({
-      moving: !prevState.moving
+    this.setState((prevState) => ({
+      moving: !prevState.moving,
     }));
     for (let i = 0; i <= visitedNodesInOrder.length; i++) {
       if (i === visitedNodesInOrder.length) {
         setTimeout(() => {
           this.animateShortestPath(nodesInShortestPathOrder);
         }, 10 * i);
-        
+
         return;
       }
       setTimeout(() => {
@@ -69,10 +72,10 @@ export default class PathfindingVisualizer extends Component {
         document.getElementById(`node-${node.row}-${node.col}`).className =
           "node node-shortest-path";
       }, 50 * i);
-      if(i===nodesInShortestPathOrder.length-1) {
+      if (i === nodesInShortestPathOrder.length - 1) {
         setTimeout(() => {
-          this.setState(prevState => ({
-            moving: !prevState.moving
+          this.setState((prevState) => ({
+            moving: !prevState.moving,
           }));
         }, 10 * i + 1500);
       }
@@ -100,7 +103,7 @@ export default class PathfindingVisualizer extends Component {
   }
   reset() {
     if (!this.state.moving) {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 30; i++) {
         for (let j = 0; j < 50; j++) {
           if (i === START_NODE_ROW && j === START_NODE_COL) {
             document.getElementById(`node-${i}-${j}`).className =
@@ -120,7 +123,7 @@ export default class PathfindingVisualizer extends Component {
 
   getInitialGrid = () => {
     const grid = [];
-    for (let row = 0; row < 20; row++) {
+    for (let row = 0; row < 30; row++) {
       const currentRow = [];
       for (let col = 0; col < 50; col++) {
         currentRow.push(this.createNode(col, row));
@@ -142,7 +145,7 @@ export default class PathfindingVisualizer extends Component {
       estimateDistance: Infinity,
     };
   };
-  
+
   getNewGridWithWallToggled = (grid, row, col) => {
     const newGrid = grid.slice();
     const node = newGrid[row][col];
@@ -154,21 +157,45 @@ export default class PathfindingVisualizer extends Component {
     return newGrid;
   };
 
+  visualizePath = () => {
+    const { algorithm } = this.state;
+    switch (algorithm) {
+      case "BFS":
+        this.visualizeBFS();
+        break;
+      case "AStar":
+        this.visualizeAStar();
+        break;
+      default:
+        break;
+    }
+  };
+  changeAlgorithm = (algorithm) => {
+    this.setState({ algorithm: algorithm });
+  };
+
   render() {
-    const { grid, mouseIsPressed } = this.state;
+    const { grid, mouseIsPressed, algorithm } = this.state;
     return (
       <>
-        <button onClick={() => this.visualizeBFS()}>
+        <NavBar
+          algorithm={algorithm}
+          reset={() => this.reset()}
+          visualizePath={() => this.visualizePath()}
+          changeAlgorithm={(algorithm) => this.changeAlgorithm(algorithm)}
+        ></NavBar>
+        <MainText></MainText>
+        {/* <button onClick={() => this.visualizeBFS()}>
           Visualize BFS algorithm
         </button>
         <button onClick={() => this.visualizeAStar()}>
           Visualize A* algorithm
         </button>
-        <button onClick={() => this.reset()}>Reset</button>
+        <button onClick={() => this.reset()}>Reset</button> */}
         <div className="grid">
           {grid.map((row, rowIdx) => {
             return (
-              <div key={rowIdx}>
+              <div className="customRow" key={rowIdx}>
                 {row.map((node, nodeIdx) => {
                   const { isStart, isFinish, isWall, row, col } = node;
                   return (
@@ -196,5 +223,3 @@ export default class PathfindingVisualizer extends Component {
     );
   }
 }
-
-
