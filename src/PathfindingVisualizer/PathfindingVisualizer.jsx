@@ -142,10 +142,10 @@ export default class PathfindingVisualizer extends Component {
     this.animateBFS(visitedNodesInOrder, nodesInShortestPathOrder);
   }
   reset() {
-    const { startRow, startCol, finishRow, finishCol } = this.state;
+    const { startRow, startCol, finishRow, finishCol, grid } = this.state;
     if (!this.state.moving) {
-      for (let i = 0; i < 30; i++) {
-        for (let j = 0; j < 50; j++) {
+      for (let i = 0; i < grid.length; i++) {
+        for (let j = 0; j < grid[i].length; j++) {
           if (i === startRow && j === startCol) {
             document.getElementById(`node-${i}-${j}`).className =
               "node node-start";
@@ -157,9 +157,41 @@ export default class PathfindingVisualizer extends Component {
           }
         }
       }
-      const grid = this.getInitialGrid();
-      this.setState({ grid: grid });
+      const newGrid = this.getInitialGrid();
+      this.setState({ grid: newGrid });
     }
+  }
+
+  resetPath() {
+    if (this.state.moving) return;
+    const { grid, startRow, startCol, finishRow, finishCol } = this.state;
+    const newGrid = grid.slice();
+    for (let i = 0; i < newGrid.length; i++) {
+      for (let j = 0; j < newGrid[i].length; j++) {
+        const oldNode = newGrid[i][j];
+        const newNode = {
+          ...oldNode,
+          isVisited: false,
+          distance: Infinity,
+          previousNode: null,
+          estimateDistance: Infinity,
+        };
+        newGrid[i][j] = newNode;
+        if (i === startRow && j === startCol) {
+          document.getElementById(`node-${i}-${j}`).className =
+            "node node-start";
+        } else if (i === finishRow && j === finishCol) {
+          document.getElementById(`node-${i}-${j}`).className =
+            "node node-finish";
+        } else if (newNode.isWall) {
+          document.getElementById(`node-${i}-${j}`).className =
+            "node node-wall";
+        } else {
+          document.getElementById(`node-${i}-${j}`).className = "node";
+        }
+      }
+    }
+    this.setState({ grid: newGrid });
   }
 
   getInitialGrid = () => {
@@ -260,6 +292,7 @@ export default class PathfindingVisualizer extends Component {
           reset={() => this.reset()}
           visualizePath={() => this.visualizePath()}
           changeAlgorithm={(algorithm) => this.changeAlgorithm(algorithm)}
+          resetPath={() => this.resetPath()}
         ></NavBar>
         <MainText></MainText>
         <div className="grid">
